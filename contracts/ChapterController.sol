@@ -1,14 +1,11 @@
 pragma solidity ^0.4.8;
 
 // import './Legislator.sol';
+import './ChapterInterface.sol';
 
 contract ChapterController is ChapterInterface {
 
-    function ChapterController() {
-      //bytes '001-1000-001';
-    }
-
-    function createChapter(bytes10 _chapterId, address _president, address _secretary) returns (Chapter chapter) {
+    function createChapter(address _president, address _secretary) returns (ChapterInterface chapter) {
         // switch type
         // get ChapterDatabase
         // return ChapterDatabase.createChapter(_chapterId, _president, _secretary)
@@ -20,7 +17,7 @@ contract ChapterController is ChapterInterface {
 
 
     ///
-    function setForum(bytes10 chapterId, Forum _forum) public returns(bool success) {
+    function setForum(uint24[3] chapterId, address[] _members) public returns(bool success) {
 
     }
 

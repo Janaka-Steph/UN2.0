@@ -1,39 +1,47 @@
+pragma solidity ^0.4.8;
+
 contract ChapterInterface {
     /// Create empty Chapter
-    /// @param bytes10 _chapterId
     /// @param address _president
     /// @param address _secretary
     /// return Chapter chapter
-    function createChapter(bytes10 _chapterId, address _president, address _secretary) returns (Chapter chapter);
+    function createChapterGlobal([]address _board, address _president, address _secretary) returns (ChapterInterface chapter);
 
-    /// Set chapter BoardOfDirectors
-    /// @param address[] directors
-    /// @return bool
-    function setBoardOfDirectors(address[] directors) returns (int boardOfDirectors);
+    /// Create empty Chapter
+    /// @param address _president
+    /// @param address _secretary
+    /// return Chapter chapter
+    function createChapterNational(address _president, address _secretary) returns (ChapterInterface chapter);
 
-    /// Set chapter president
-    /// @param bytes10 chapterId
-    /// @param ExecutiveCommittee executiveCommittee
-    /// @return address executiveCommitteeAddr
-    function setChapterPresident(address _president) returns (bool success);
+    /// Create empty Chapter
+    /// @param address _president
+    /// @param address _secretary
+    /// return Chapter chapter
+    function createChapterLocal(address _president, address _secretary) returns (ChapterInterface chapter);
 
     /// Set chapter executive committee
     /// @param address[] _executives
     /// @return bool
-    function setExecutiveCommittee(address[] _executives) returns (bool success);
+    function setExecutiveCommittee(uint24[3] _chapterId, address[] _executives) returns (bool success);
 
     /// Set chapter forum
-    /// @param bytes10 chapterId
+    /// @param uint24[3] chapterId
     /// @param Forum forum
     /// @return bool
-    function setForum(bytes10 chapterId, Forum _forum) public returns(bool success);
+    function setForum(uint24[3] _chapterId, address[] _members) public returns(bool success);
 
     /// Set chapter Secretariat
     /// @param address _secretary
     /// @param address[] _members
     /// @return bool
-    function setSecretariat(address _secretary, address[] _members) returns (bool success);
+    function setSecretariat(uint24[3] _chapterId, address _secretary, address[] _members) returns (bool success);
+
+    /// Set chapter president
+    /// @param uint24[3] chapterId
+    /// @param ExecutiveCommittee executiveCommittee
+    /// @return address executiveCommitteeAddr
+    function setNewPresident(uint24[3] _chapterId, address _president) returns (bool success);
 
     /// Set new secretary
-    function setNewSecretary(bytes10 chapterId, address _secretary) returns (bool success);
+    function setNewSecretary(uint24[3] _chapterId, address _secretary) returns (bool success);
 }

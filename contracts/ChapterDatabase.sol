@@ -1,10 +1,13 @@
-contract ChapterDatabase is GDAOEnabled {
+pragma solidity ^0.4.8;
 
-   // '001-1000-001'
-   bytes10 public chapterId;
+contract ChapterDatabase /*is GDAOEnabled*/ {
+
+   // [1, 1, 1]
+   uint24[3] chapterId;
+
+   enum Level {Local, National, Global}
 
    struct Forum {
-       address forumId;
        address[] members;
    }
    
@@ -27,17 +30,47 @@ contract ChapterDatabase is GDAOEnabled {
     /// Each chapter is chaired by a president and is managed by a secretary.
     // TODO explain index - https://medium.com/@robhitchens/solidity-crud-part-1-824ffa69509a
     uint index;
-    bytes10 chapterId;
+    uint24[3] chapterId;
+    // II. Article 50 -	Principle of subsidiarity
+    // 1. UN2.0 bodies are ordered in chapters of different levels.
+    Level level;
     address president;
     Forum forum;
     ExecutiveCommittee executiveCommittee;
     BoardOfDirectors boardOfDirectors;
     Secretariat secretariat;
-    bytes10[] subChapters;
+    uint24[3][] subChapters;
   }
 
-  //mapping(chapterBodyType => chapters[chapterId][chapterBodyType]);
-  mapping(chapterId => Chapter) private chapters;
+  struct ChapterGlobal {
+    uint24 globalChapterId;
+    address president;
+    Forum forum;
+    ExecutiveCommittee executiveCommittee;
+    BoardOfDirectors boardOfDirectors;
+    Secretariat secretariat;
+    mapping(uint24 => ChapterNational) chaptersNational;
+  }
+
+  struct ChapterNational {
+    uint24 nationalChapterId;
+    address president;
+    Forum forum;
+    ExecutiveCommittee executiveCommittee;
+    Secretariat secretariat;
+    // moderators
+    mapping(uint24 => ChapterLocal) chaptersLocal;
+  }
+
+  struct ChapterLocal {
+    uint24 localChapterId;
+    address president;
+    Forum forum;
+    ExecutiveCommittee executiveCommittee;
+    Secretariat secretariat;
+  }
+
+  mapping(uint24 => ChapterGlobal) chaptersGlobal;
   address[] private  chapterIndex;
 
   event LogChapterBodies (
@@ -61,50 +94,52 @@ contract ChapterDatabase is GDAOEnabled {
   /// Check if chapter exist
   /// @param address chapterId
   /// @return bool isIndeed
-  function isExistingChapter(address chapterId)
+  function isExistingChapterLocal(uint24[3] _chapterId)
     public
     constant
     returns(bool isIndeed)
   {
     if (chapterIndex.length == 0) return false;
-    return chapterIndex[chapters[chapterId].index] == chapterId;
+
+    // return chapterIndex[chapters[_chapterId].index] == _chapterId;
+    // chaptersGlobal[_chapterId[0]].chaptersNational[_chapterId[1]].chaptersLocal[_chapterId[2]];
   }
 
 
   /// Create empty Chapter
-  /// @param bytes10 _chapterId
+  /// @param uint24[3] _chapterId
   /// @param address _president
   /// @param address _secretary
   /// return Chapter chapter
-  function createChapter(bytes10 _chapterId, address _president, address _secretary) returns (Chapter chapter) {
-    Forum memory newForum = forum({
+  function createChapter(uint24[3] _chapterId, address _president, address _secretary) returns (Chapter chapter) {
+    Forum memory newForum = Forum({
       members: []
     });
 
-    ExecutiveCommittee memory newExecutiveCommittee = executiveCommittee({
+    ExecutiveCommittee memory newExecutiveCommittee = ExecutiveCommittee({
       executiveCommitteeAddr: -1
     });
 
-    BoardOfDirectors memory newBoardOfDirectors = boardOfDirectors({
+    BoardOfDirectors memory newBoardOfDirectors = BoardOfDirectors({
       boardOfDirectorsAddr: -1
     });
 
-    Secretariat memory newSecretariat = secretariat({
+    Secretariat memory newSecretariat = Secretariat({
       secretary: _secretary,
       members: []
     });
 
     // push() returns the new length
-    uint memory index     =  chapterIndex.push(_chapterId) - 1;
+    uint index     =  chapterIndex.push(_chapterId) - 1;
     chapters[chapterId] = Chapter(index, _chapterId, _president, newForum, newExecutiveCommittee, newBoardOfDirectors, newSecretariat);
     return chapters[chapterId];
   }
 
   /// Set chapter forum
-  /// @param bytes10 chapterId
+  /// @param uint24[3] chapterId
   /// @param Forum forum
   /// @return bool
-  function setForum(bytes10 chapterId, Forum _forum) public returns(bool success) {
+  function setForum(uint24[3] chapterId, Forum _forum) public returns(bool success) {
     if(!isExistingChapter(chapterId)) throw;
     // Set forum
     chapters[chapterId].forum = _forum;
@@ -139,15 +174,15 @@ contract ChapterDatabase is GDAOEnabled {
   /// Set chapter BoardOfDirectors
   /// @param address[] directors
   /// @return bool
-  function setBoardOfDirectors(address[] directors) returns (bool success) {
-     if(!isExistingChapter(chapterId)) throw;
+  function setBoardOfDirectors(uint24[3] _chapterId, address[] _directors) returns (bool success) {
+     if(!isExistingChapter(_chapterId)) throw;
      // Set BoardOfDirectors
-     chapters[chapterId].boardOfDirectors.directors = _directors;
+     chapters[_chapterId].boardOfDirectors.directors = _directors;
      LogBody(
        chapterId,
-       chapters[chapterId].index,
-       chapters[chapterId].boardOfDirectors,
-       chapters[chapterId].boardOfDirectors.directors
+       chapters[_chapterId].index,
+       chapters[_chapterId].boardOfDirectors,
+       chapters[_chapterId].boardOfDirectors.directors
      );
     return true;
   }
@@ -171,7 +206,7 @@ contract ChapterDatabase is GDAOEnabled {
   }
 
   /// Set new secretary
-  function setNewSecretary(bytes10 chapterId, address _secretary) returns (bool success) {
+  function setNewSecretary(uint24[3] chapterId, address _secretary) returns (bool success) {
     if(!isExistingChapter(chapterId)) throw;
     // Set Secretary
     chapters[chapterId].secretariat.secretary = _secretary;
@@ -179,7 +214,7 @@ contract ChapterDatabase is GDAOEnabled {
   }
 
   /// Set chapter president
-  /// @param bytes10 chapterId
+  /// @param uint24[3] chapterId
   /// @param ExecutiveCommittee executiveCommittee
   /// @return address executiveCommitteeAddr
   function setChapterPresident(address _president) returns (bool success) {
@@ -199,9 +234,9 @@ contract ChapterDatabase is GDAOEnabled {
   }
 
   /// getChapterBodies
-  /// @param bytes10 chapterId
+  /// @param uint24[3] chapterId
   /// return ...
-  function getChapterBodies(bytes10 chapterId)
+  function getChapterBodies(uint24[3] chapterId)
     public
     constant
     returns(
@@ -254,9 +289,9 @@ contract ChapterDatabase is GDAOEnabled {
 
   /// Insert chapter body
     /// @param string bodyType {ExecutiveCommittee, Forum, BoardOfDirectors, Secretariat, President, Secretary}
-    /// @param bytes10 chapterId
+    /// @param uint24[3] chapterId
     /// Todo maybe not possible
-    /*function insertChapterBody(enum chapterBodyType, bytes10 chapterId, Chapter chapterBody) public returns(uint index) {
+    /*function insertChapterBody(enum chapterBodyType, uint24[3] chapterId, Chapter chapterBody) public returns(uint index) {
       if(!isExistingChapter(chapterId)) throw;
       //
       chapters[chapterId][chapterBodyType] = chapterBody;
@@ -278,7 +313,7 @@ contract ChapterDatabase is GDAOEnabled {
     }*/
 
     /*
-      function updateChapterBody(bytes10 chapterId, bytes32 ChapterBodyType)
+      function updateChapterBody(uint24[3] chapterId, bytes32 ChapterBodyType)
         public
         returns(bool success)
       {
