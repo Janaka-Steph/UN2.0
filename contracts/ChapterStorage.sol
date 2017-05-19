@@ -90,7 +90,43 @@ contract ChapterStorage {
     chapterGlobal.secretariat.secretary = _secretary;
     chapterGlobal.moderators['name2'] = 0x3;
     _success = true;
+    return _success;
   }
+
+  /// @notice Create National chapter
+  /// @dev Called once. There is only one global chapter
+  /// @param _chapterNationalId The chapter National Id
+  /// @param _president The president
+  /// @param _secretary The secretary
+  /// @return bool
+  function createChapterNational(uint24 _chapterNationalId, address _president, address _secretary) returns (bool _success) {
+    chapterGlobal.chaptersNational[ _chapterNationalId ].president = _president;
+    chapterGlobal.chaptersNational[ _chapterNationalId ].secretariat.secretary = _secretary;
+    chapterGlobal.chaptersNational[ _chapterNationalId ].moderators['name2'] = 0x3;
+    _success = true;
+    return _success;
+  }
+
+  /// @notice Create Local chapter
+  /// @dev Called once. There is only one global chapter
+  /// @param _chapterNationalId The chapter National Id
+  /// @param _chapterLocalId The chapter Local Id
+  /// @param _president The president
+  /// @param _secretary The secretary
+  /// @return bool
+  function createChapterLocal(uint24 _chapterNationalId, uint24 _chapterLocalId, address _president, address _secretary) returns (bool _success) {
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ _chapterLocalId ].president = _president;
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ _chapterLocalId ].secretariat.secretary = _secretary;
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ _chapterLocalId ].moderators['name2'] = 0x3;
+    _success = true;
+    return _success;
+  }
+
+
+  /**
+  * CHAPTER BODY SETTERS
+  *
+  */
 
    /// @notice Set chapter forum
    /// @param _chapterId The chapter ID

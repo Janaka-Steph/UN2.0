@@ -4,6 +4,7 @@ pragma solidity ^0.4.11;
 /// @author 97Network
 contract Registry {
 
+  address public registryAddress = address(this);
   mapping (bytes32 => address) contracts;
 
   function registerContract(bytes32 _name, address _contract) returns (bool _success) {
