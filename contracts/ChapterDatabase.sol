@@ -1,7 +1,12 @@
 pragma solidity ^0.4.8;
 
+import './ChapterInterface.sol';
+
+/// @title Chapter Database
+/// @author 97Network
 contract ChapterDatabase /*is GDAOEnabled*/ {
 
+   // [global, national, local]
    // [1, 1, 1]
    uint24[3] chapterId;
 
@@ -10,21 +15,21 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
    struct Forum {
        address[] members;
    }
-   
+
    struct ExecutiveCommittee {
-      address executiveCommitteeId;
-      address[] members;
+      address executiveCommitteeAddr;
+      mapping(bytes32 => address) members;
    }
-      
+
    struct BoardOfDirectors {
       address[] directors;
    }
-         
+
    struct Secretariat {
        address secretary;
        address[] members;
    }
-  
+
    struct Chapter {
     /// @dev Each chapter is composed of a forum, an executive committee, a board of directors and a secretariat
     /// Each chapter is chaired by a president and is managed by a secretary.
@@ -43,11 +48,11 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
   }
 
   struct ChapterGlobal {
-    uint24 globalChapterId;
     address president;
-    Forum forum;
     ExecutiveCommittee executiveCommittee;
-    BoardOfDirectors boardOfDirectors;
+    Forum forum;
+    // Moderators: name => address
+    mapping(bytes32 => address) moderators;
     Secretariat secretariat;
     mapping(uint24 => ChapterNational) chaptersNational;
   }
@@ -57,8 +62,8 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
     address president;
     Forum forum;
     ExecutiveCommittee executiveCommittee;
+    address[] moderators;
     Secretariat secretariat;
-    // moderators
     mapping(uint24 => ChapterLocal) chaptersLocal;
   }
 
@@ -67,11 +72,14 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
     address president;
     Forum forum;
     ExecutiveCommittee executiveCommittee;
+    address[] moderators;
     Secretariat secretariat;
   }
 
-  mapping(uint24 => ChapterGlobal) chaptersGlobal;
-  address[] private  chapterIndex;
+  // There is one global chapter
+  ChapterGlobal chapterGlobal;
+  //
+  address[] private chapterIndex;
 
   event LogChapterBodies (
     address indexed chapterId,
@@ -89,11 +97,9 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
 
 
 
-
-  //////////////////////////////////
-  /// Check if chapter exist
-  /// @param address chapterId
-  /// @return bool isIndeed
+  /// @notice Check if chapter exist
+  /// @param _chapterId The chapter ID
+  /// @return bool
   function isExistingChapterLocal(uint24[3] _chapterId)
     public
     constant
@@ -106,163 +112,157 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
   }
 
 
-  /// Create empty Chapter
-  /// @param uint24[3] _chapterId
-  /// @param address _president
-  /// @param address _secretary
-  /// return Chapter chapter
-  function createChapter(uint24[3] _chapterId, address _president, address _secretary) returns (Chapter chapter) {
-    Forum memory newForum = Forum({
-      members: []
+  /// @notice Create global chapter
+  /// @dev Called once. There is only one global chapter
+  /// @param _president The president
+  /// @param _secretary The secretary
+  /// @return bool
+  function createChapterGlobal(address _president, address _secretary) returns (bool _success) {
+    ExecutiveCommittee executiveCommittee = ExecutiveCommittee({
+      executiveCommitteeAddr: 0x1
     });
 
-    ExecutiveCommittee memory newExecutiveCommittee = ExecutiveCommittee({
-      executiveCommitteeAddr: -1
+    executiveCommittee.members['name'] = 0x2;
+
+    Forum memory forum = Forum({
+      members: -1
     });
 
-    BoardOfDirectors memory newBoardOfDirectors = BoardOfDirectors({
-      boardOfDirectorsAddr: -1
-    });
-
-    Secretariat memory newSecretariat = Secretariat({
+    Secretariat memory secretariat = Secretariat({
       secretary: _secretary,
-      members: []
+      members: -1
     });
 
+    var moderators = [];
+
     // push() returns the new length
-    uint index     =  chapterIndex.push(_chapterId) - 1;
-    chapters[chapterId] = Chapter(index, _chapterId, _president, newForum, newExecutiveCommittee, newBoardOfDirectors, newSecretariat);
-    return chapters[chapterId];
-  }
-
-  /// Set chapter forum
-  /// @param uint24[3] chapterId
-  /// @param Forum forum
-  /// @return bool
-  function setForum(uint24[3] chapterId, Forum _forum) public returns(bool success) {
-    if(!isExistingChapter(chapterId)) throw;
-    // Set forum
-    chapters[chapterId].forum = _forum;
-    // push() returns the new length
-    chapters[chapterId].index     =  chapterIndex.push(chapterId) - 1;
-
-    LogBody(
-      chapterId,
-      chapters[chapterId].index,
-      chapters[chapterId].forum
-    );
-
-    return true;
+    // uint index     =  chapterIndex.push(_chapterId) - 1;
+    chapterGlobal = ChapterGlobal(_president, executiveCommittee, forum, moderators, secretariat);
+    _success = true;
   }
 
 
-  /// Set chapter executive committee
-  /// @param address[] _executives
-  /// @return bool
-  function setExecutiveCommittee(address[] _executives) returns (bool success) {
-    if(!isExistingChapter(chapterId)) throw;
-      // Set ExecutiveCommittee
-      chapters[chapterId].executiveCommittee.executives = _executives;
-      LogBody(
-        chapterId,
-        chapters[chapterId].index,
-        chapters[chapterId].executiveCommittee
-      );
-      return true;
+   /// @notice Set chapter executive committee
+   /// @param _chapterId The chapter ID
+   /// @param _executives The executives
+   /// @return bool
+   function setExecutiveCommittee(uint24[3] _chapterId, address[] _executives) returns (bool _success) {
+     if(!isExistingChapterLocal(chapterId)) throw;
+       // If National
+       if (_chapterId[2] == 0) {
+          chapterGlobal
+            .chaptersNational[ _chapterId[1] ]
+            .executiveCommittee.members = _executives;
+       // If Local
+       } else {
+          chapterGlobal
+            .chaptersNational[ _chapterId[1] ]
+            .chaptersLocal[ _chapterId[2] ]
+            .executiveCommittee.members = _executives;
+       }
+       _success = true;
+   }
+
+   /// @notice Set chapter forum
+   /// @param _chapterId The chapter ID
+   /// @param _members The forum members
+   /// @return bool
+   function setForum(uint24[3] _chapterId, address[] _members) public returns(bool _success) {
+    if(!isExistingChapterLocal(chapterId)) throw;
+      // If National
+      if (_chapterId[2] == 0) {
+         chapterGlobal
+           .chaptersNational[ _chapterId[1] ]
+           .forum
+           .members = _members;
+      // If Local
+      } else {
+         chapterGlobal
+           .chaptersNational[ _chapterId[1] ]
+           .chaptersLocal[ _chapterId[2] ]
+           .forum
+           .members = _members;
+      }
+      _success = true;
+   }
+
+   /// @notice Set chapter Secretariat
+   /// @param _chapterId The chapter ID
+   /// @param _secretary The secretary
+   /// @param _members The members
+   /// @return bool
+   function setSecretariat(uint24[3] _chapterId, address _secretary, address[] _members) returns (bool _success) {
+      if(!isExistingChapterLocal(chapterId)) throw;
+       // If National
+       if (_chapterId[2] == 0) {
+          chapterGlobal
+            .chaptersNational[ _chapterId[1] ]
+            .secretariat = Secretariat(_secretary, _members);
+       // If Local
+       } else {
+          chapterGlobal
+            .chaptersNational[ _chapterId[1] ]
+            .chaptersLocal[ _chapterId[2] ]
+            .secretariat = Secretariat(_secretary, _members);
+       }
+       _success = true;
+   }
+
+   /// @notice Set chapter president
+   /// @param _chapterId The chapter ID
+   /// @param _president The new president
+   /// @return bool
+   function setChapterPresident(uint24[3] _chapterId, address _president) returns (bool _success) {
+      // If National
+      if (_chapterId[2] == 0) {
+         chapterGlobal
+           .chaptersNational[ _chapterId[1] ]
+           .president = _president;
+      // If Local
+      } else {
+         chapterGlobal
+           .chaptersNational[ _chapterId[1] ]
+           .chaptersLocal[ _chapterId[2] ]
+           .president = _president;
+      }
+      _success = true;
+   }
+
+   /// @notice Set chapter secretary
+   /// @param _chapterId The chapter ID
+   /// @param _secretary The new secretary
+   /// @return bool
+   function setChapterSecretary(uint24[3] _chapterId, address _secretary) returns (bool _success) {
+     if(!isExistingChapterLocal(chapterId)) throw;
+       // If National
+       if (_chapterId[2] == 0) {
+          chapterGlobal
+            .chaptersNational[ _chapterId[1] ]
+            .secretariat
+            .secretary = _secretary;
+       // If Local
+       } else {
+          chapterGlobal
+            .chaptersNational[ _chapterId[1] ]
+            .chaptersLocal[ _chapterId[2] ]
+            .secretariat
+            .secretary = _secretary;
+       }
+       _success = true;
+   }
+
+/*
+  // @notice Get chapter national
+  // @param _chapterNationalId The national chapter ID
+  // @return ChapterNational
+  function getChapterNational(uint24 _chapterNationalId) public constant returns (ChapterNational _chapterNational) {
+    _chapterNational = chapterGlobal.chaptersNational[ _chapterNationalId ];
   }
+*/
 
-  /// Set chapter BoardOfDirectors
-  /// @param address[] directors
-  /// @return bool
-  function setBoardOfDirectors(uint24[3] _chapterId, address[] _directors) returns (bool success) {
-     if(!isExistingChapter(_chapterId)) throw;
-     // Set BoardOfDirectors
-     chapters[_chapterId].boardOfDirectors.directors = _directors;
-     LogBody(
-       chapterId,
-       chapters[_chapterId].index,
-       chapters[_chapterId].boardOfDirectors,
-       chapters[_chapterId].boardOfDirectors.directors
-     );
-    return true;
-  }
-
-  /// Set chapter Secretariat
-  /// @param address _secretary
-  /// @param address[] _members
-  /// @return bool
-  function setSecretariat(address _secretary, address[] _members) returns (bool success) {
-   if(!isExistingChapter(chapterId)) throw;
-       // Set Secretariat
-       chapters[chapterId].secretariat.secretary = _secretary;
-       chapters[chapterId].secretariat.members = _members;
-       LogBody(
-         chapterId,
-         chapters[chapterId].index,
-         chapters[chapterId].secretariat.secretary,
-         chapters[chapterId].secretariat.members
-       );
-      return true;
-  }
-
-  /// Set new secretary
-  function setNewSecretary(uint24[3] chapterId, address _secretary) returns (bool success) {
-    if(!isExistingChapter(chapterId)) throw;
-    // Set Secretary
-    chapters[chapterId].secretariat.secretary = _secretary;
-    return true;
-  }
-
-  /// Set chapter president
-  /// @param uint24[3] chapterId
-  /// @param ExecutiveCommittee executiveCommittee
-  /// @return address executiveCommitteeAddr
-  function setChapterPresident(address _president) returns (bool success) {
-      chapters[chapterId].president = _president;
-  }
-
-
-  /// Get chapter by ID
-  /// @param address _chapterId
-  /// @return Chapter chapter
-  function getChapterById(address _chapterId)
-    public
-    constant
-    returns(Chapter chapter)
-  {
-    return chapters[_chapterId];
-  }
-
-  /// getChapterBodies
-  /// @param uint24[3] chapterId
-  /// return ...
-  function getChapterBodies(uint24[3] chapterId)
-    public
-    constant
-    returns(
-      uint index,
-      address forum,
-      address executiveCommittee,
-      address boardOfDirectors,
-      address secretariat,
-      address chapterPresident,
-      address chapterSecretary
-      )
-  {
-    if(!isExistingChapter(chapterId)) throw;
-    return(
-      chapters[chapterId].index,
-      chapters[chapterId].forum,
-      chapters[chapterId].executiveCommittee,
-      chapters[chapterId].boardOfDirectors,
-      chapters[chapterId].secretariat,
-      chapters[chapterId].chapterPresident,
-      chapters[chapterId].chapterSecretary
-    );
-  }
-
-  /// getChapterCount
-  /// return uint count
+/*
+  // @notice getChapterCount
+  // @return uint
   function getChapterCount()
     public
     constant
@@ -271,61 +271,16 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
     return  chapterIndex.length;
   }
 
-  /// getChapterAtIndex
-  /// @param uint index
-  /// @return address chapterId
+  // @notice getChapterAtIndex
+  // @param index The Chapter index
+  // @return uint24[3]
   function getChapterAtIndex(uint index)
     public
     constant
-    returns(address chapterId)
+    returns(uint24[3])
   {
     return  chapterIndex[index];
   }
 
-
-
-
-
-
-  /// Insert chapter body
-    /// @param string bodyType {ExecutiveCommittee, Forum, BoardOfDirectors, Secretariat, President, Secretary}
-    /// @param uint24[3] chapterId
-    /// Todo maybe not possible
-    /*function insertChapterBody(enum chapterBodyType, uint24[3] chapterId, Chapter chapterBody) public returns(uint index) {
-      if(!isExistingChapter(chapterId)) throw;
-      //
-      chapters[chapterId][chapterBodyType] = chapterBody;
-      // push() returns the new length
-      chapters[chapterId].index     =  chapterIndex.push(chapterId) - 1;
-
-      LogBody(
-          chapterId,
-          chapters[chapterId].index,
-          chapters[chapterId].forum,
-          chapters[chapterId].executiveCommittee,
-          chapters[chapterId].boardOfDirectors,
-          chapters[chapterId].secretariat,
-          chapters[chapterId].chapterPresident,
-          chapters[chapterId].chapterSecretary
-          );
-
-      return  chapterIndex.length-1;
-    }*/
-
-    /*
-      function updateChapterBody(uint24[3] chapterId, bytes32 ChapterBodyType)
-        public
-        returns(bool success)
-      {
-        if(!isExistingChapter(chapterId)) throw;
-        //
-        chapters[chapterId][ChapterBodyType] = ChapterBodyType;
-        LogUpdateUser(
-          chapterId,
-          chapters[chapterId].index,
-          userEmail,
-          chapters[chapterId].userAge);
-        return true;
-      }
-    */
+*/
 }

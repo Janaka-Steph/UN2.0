@@ -1,42 +1,84 @@
 pragma solidity ^0.4.8;
 
 // import './Legislator.sol';
-import './ChapterInterface.sol';
-
-contract ChapterController is ChapterInterface {
-
-    function createChapter(address _president, address _secretary) returns (ChapterInterface chapter) {
-        // switch type
-        // get ChapterDatabase
-        // return ChapterDatabase.createChapter(_chapterId, _president, _secretary)
-    }
-
-    //function createChapterGlobal(_currentChapter) is('boardOfDirectors') returns (chapter) {}
-    //function createChapterNational(_currentChapter) is('boardOfDirectors') returns (chapter) {}
-    //function createChapterLocal(_currentChapter) is('boardOfDirectors') returns (chapter) {}
+// import './ChapterDatabase.sol';
 
 
-    ///
-    function setForum(uint24[3] chapterId, address[] _members) public returns(bool success) {
+/// @title Chapter Controller
+/// @author 97Network
+contract ChapterController {
+  /// @notice Create global chapter
+  /// @dev Called once. There is only one global chapter
+  /// @param _president The president
+  /// @param _secretary The secretary
+  /// @return bool
+  function createChapterGlobal(address _president, address _secretary) returns (bool _success) {
+     // lock = false
+     // get ChapterDatabase
+     // if is BoardOfDirectors
+     // ChapterDatabase.createChapterGlobal(_board, _chapterId, _president, _secretary)
+     // lock = true
+  }
 
-    }
+  /// @notice Create National chapter
+  /// @param _president The president
+  /// @param _secretary The secretary
+  /// @return ChapterNational
+  function createChapterNational(address _president, address _secretary) returns (bool _success) {
 
-    // Set executive committee process
-    function setExecutiveCommittee() {
-        //VotingSystem = ContractProvider(GDAO).getContract(name);
-        // Legislator.vote();
-        //if (VotingSystem.isPassed) {
-           //ChapterDatabase = ContractProvider(GDAO).getContract('chapterDatabase');
-           //ChapterDatabase.setExecutiveCommittee();
-        //}
-    }
+  }
+
+  /// @notice Create Local chapter
+  /// @param _president The president
+  /// @param _secretary The secretary
+  /// @return ChapterLocal
+  function createChapterLocal(address _president, address _secretary) returns (bool _success) {
+
+  }
+
+  /// @notice Set chapter executive committee
+  /// @param _chapterId The chapter ID
+  /// @param _executives The executives
+  /// @return bool
+  function setExecutiveCommittee(uint24[3] _chapterId, address[] _executives) returns (bool _success) {
+    //VotingSystem = ContractProvider(GDAO).getContract(name);
+    // Legislator.vote();
+    //if (VotingSystem.isPassed) {
+       //ChapterDatabase = ContractProvider(GDAO).getContract('chapterDatabase');
+       //ChapterDatabase.setExecutiveCommittee();
+    //}
+  }
+
+  /// @notice Set chapter forum
+  /// @param _chapterId The chapter ID
+  /// @param _members The forum members
+  /// @return bool
+  function setForum(uint24[3] _chapterId, address[] _members) public returns(bool _success) {
+
+  }
+
+  /// @notice Set chapter Secretariat
+  /// @param _chapterId The chapter ID
+  /// @param _secretary The secretary
+  /// @param _members The members
+  /// @return bool
+  function setSecretariat(uint24[3] _chapterId, address _secretary, address[] _members) returns (bool _success) {
+
+  }
+
+  /// @notice Set chapter president
+  /// @param _chapterId The chapter ID
+  /// @param _president The new president
+  /// @return bool
+  function setNewPresident(uint24[3] _chapterId, address _president) returns (bool _success) {
+
+  }
+
+  /// @notice Set new secretary
+  /// @param _chapterId The Chapter ID
+  /// @param _secretary The new secretary
+  /// @return bool
+  function setNewSecretary(uint24[3] _chapterId, address _secretary) returns (bool _success) {
+
+  }
 }
-
-/*
-1. Adopted by: UN2.0 Board of Directors
-2. Normative base: Norm 20170101-0000000000-0001-02 relative to UN2.0 norms
-3. Date of adoption: 01/01/2017
-4. Recipients: any chapter's board of directors
-5. Signatory: President of UN2.0
-6. Date of signature: 01/01/2017
-*/
