@@ -56,6 +56,7 @@ contract ChapterController is Registry {
     // Legislator.vote();
     //if (VotingSystem.isPassed) {
      _success = ChapterStorage(registry.getContract('s:chapter')).setForum(_chapterId, _members);
+     if (!_success) throw;
      return true;
     //}
     //else {
