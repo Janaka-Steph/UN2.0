@@ -1,13 +1,10 @@
 pragma solidity ^0.4.8;
 
-import './ChapterInterface.sol';
-
 /// @title Chapter Database
 /// @author 97Network
-contract ChapterDatabase /*is GDAOEnabled*/ {
+contract ChapterDatabase {
 
-   // [global, national, local]
-   // [1, 1, 1]
+   // National chapter [000], Local chapter [00000], Sub-chapter [00]
    uint24[3] chapterId;
 
    enum Level {Local, National, Global}
@@ -16,70 +13,47 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
        address[] members;
    }
 
-   struct ExecutiveCommittee {
-      address executiveCommitteeAddr;
-      mapping(bytes32 => address) members;
-   }
-
-   struct BoardOfDirectors {
-      address[] directors;
-   }
-
    struct Secretariat {
        address secretary;
        address[] members;
    }
 
-   struct Chapter {
-    /// @dev Each chapter is composed of a forum, an executive committee, a board of directors and a secretariat
-    /// Each chapter is chaired by a president and is managed by a secretary.
-    // TODO explain index - https://medium.com/@robhitchens/solidity-crud-part-1-824ffa69509a
-    uint index;
-    uint24[3] chapterId;
-    // II. Article 50 -	Principle of subsidiarity
-    // 1. UN2.0 bodies are ordered in chapters of different levels.
-    Level level;
-    address president;
-    Forum forum;
-    ExecutiveCommittee executiveCommittee;
-    BoardOfDirectors boardOfDirectors;
-    Secretariat secretariat;
-    uint24[3][] subChapters;
-  }
-
   struct ChapterGlobal {
-    address president;
-    ExecutiveCommittee executiveCommittee;
-    Forum forum;
-    // Moderators: name => address
-    mapping(bytes32 => address) moderators;
-    Secretariat secretariat;
     mapping(uint24 => ChapterNational) chaptersNational;
+    Forum forum;
+    mapping(uint24 => SubChapter) globalSubChapters;
+    mapping(bytes32 => address) moderators;
+    address president;
+    Secretariat secretariat;
   }
 
   struct ChapterNational {
-    uint24 nationalChapterId;
-    address president;
-    Forum forum;
-    ExecutiveCommittee executiveCommittee;
-    address[] moderators;
-    Secretariat secretariat;
     mapping(uint24 => ChapterLocal) chaptersLocal;
+    Forum forum;
+    mapping(bytes32 => address) moderators;
+    uint24 nationalChapterId;
+    mapping(uint24 => SubChapter) nationalSubChapters;
+    address president;
+    Secretariat secretariat;
   }
 
   struct ChapterLocal {
     uint24 localChapterId;
-    address president;
+    mapping(uint24 => SubChapter) localSubChapters;
     Forum forum;
-    ExecutiveCommittee executiveCommittee;
-    address[] moderators;
+    mapping(bytes32 => address) moderators;
+    address president;
     Secretariat secretariat;
+  }
+
+  struct SubChapter {
+      uint24 subChapterId;
+      bytes32 description;
+      address moderator;
   }
 
   // There is one global chapter
   ChapterGlobal chapterGlobal;
-  //
-  address[] private chapterIndex;
 
   event LogChapterBodies (
     address indexed chapterId,
@@ -91,24 +65,18 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
     address chapterPresident,
     address chapterSecretary
   );
-  event LogBody    (address indexed chapterId, uint index, address body);
-  event LogChapter (address indexed chapterId, uint index, address chapter);
-  event LogUpdateChapter(address indexed chapterId, uint index, bytes32 bodyType, address bodyAddr);
-
 
 
   /// @notice Check if chapter exist
   /// @param _chapterId The chapter ID
   /// @return bool
-  function isExistingChapterLocal(uint24[3] _chapterId)
-    public
-    constant
-    returns(bool isIndeed)
-  {
-    if (chapterIndex.length == 0) return false;
-
-    // return chapterIndex[chapters[_chapterId].index] == _chapterId;
-    // chaptersGlobal[_chapterId[0]].chaptersNational[_chapterId[1]].chaptersLocal[_chapterId[2]];
+  function isChapterLocalExists(uint24[3] _chapterId) public constant returns (bool) {
+    if (chapterGlobal
+          .chaptersNational[ _chapterId[0] ]
+          .chaptersLocal[ _chapterId[1] ]
+          .localChapterId != 0
+       ) { return true; }
+    else { return false; }
   }
 
 
@@ -118,68 +86,29 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
   /// @param _secretary The secretary
   /// @return bool
   function createChapterGlobal(address _president, address _secretary) returns (bool _success) {
-    ExecutiveCommittee executiveCommittee = ExecutiveCommittee({
-      executiveCommitteeAddr: 0x1
-    });
-
-    executiveCommittee.members['name'] = 0x2;
-
-    Forum memory forum = Forum({
-      members: -1
-    });
-
-    Secretariat memory secretariat = Secretariat({
-      secretary: _secretary,
-      members: -1
-    });
-
-    var moderators = [];
-
-    // push() returns the new length
-    // uint index     =  chapterIndex.push(_chapterId) - 1;
-    chapterGlobal = ChapterGlobal(_president, executiveCommittee, forum, moderators, secretariat);
+    chapterGlobal.president = _president;
+    chapterGlobal.secretariat.secretary = _secretary;
+    chapterGlobal.moderators['name2'] = 0x3;
     _success = true;
   }
-
-
-   /// @notice Set chapter executive committee
-   /// @param _chapterId The chapter ID
-   /// @param _executives The executives
-   /// @return bool
-   function setExecutiveCommittee(uint24[3] _chapterId, address[] _executives) returns (bool _success) {
-     if(!isExistingChapterLocal(chapterId)) throw;
-       // If National
-       if (_chapterId[2] == 0) {
-          chapterGlobal
-            .chaptersNational[ _chapterId[1] ]
-            .executiveCommittee.members = _executives;
-       // If Local
-       } else {
-          chapterGlobal
-            .chaptersNational[ _chapterId[1] ]
-            .chaptersLocal[ _chapterId[2] ]
-            .executiveCommittee.members = _executives;
-       }
-       _success = true;
-   }
 
    /// @notice Set chapter forum
    /// @param _chapterId The chapter ID
    /// @param _members The forum members
    /// @return bool
    function setForum(uint24[3] _chapterId, address[] _members) public returns(bool _success) {
-    if(!isExistingChapterLocal(chapterId)) throw;
+    if(!isChapterLocalExists(chapterId)) throw;
       // If National
-      if (_chapterId[2] == 0) {
+      if (_chapterId[1] == 0) { // if not local
          chapterGlobal
-           .chaptersNational[ _chapterId[1] ]
+           .chaptersNational[ _chapterId[0] ]
            .forum
            .members = _members;
       // If Local
       } else {
          chapterGlobal
-           .chaptersNational[ _chapterId[1] ]
-           .chaptersLocal[ _chapterId[2] ]
+           .chaptersNational[ _chapterId[0] ]
+           .chaptersLocal[ _chapterId[1] ]
            .forum
            .members = _members;
       }
@@ -192,17 +121,16 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
    /// @param _members The members
    /// @return bool
    function setSecretariat(uint24[3] _chapterId, address _secretary, address[] _members) returns (bool _success) {
-      if(!isExistingChapterLocal(chapterId)) throw;
+      if(!isChapterLocalExists(chapterId)) throw;
        // If National
-       if (_chapterId[2] == 0) {
-          chapterGlobal
-            .chaptersNational[ _chapterId[1] ]
-            .secretariat = Secretariat(_secretary, _members);
+       if (_chapterId[1] == 0) { // if not local
+          chapterGlobal.chaptersNational[ _chapterId[0] ].secretariat.secretary = _secretary;
+          chapterGlobal.chaptersNational[ _chapterId[0] ].secretariat.members = _members;
        // If Local
        } else {
           chapterGlobal
-            .chaptersNational[ _chapterId[1] ]
-            .chaptersLocal[ _chapterId[2] ]
+            .chaptersNational[ _chapterId[0] ]
+            .chaptersLocal[ _chapterId[1] ]
             .secretariat = Secretariat(_secretary, _members);
        }
        _success = true;
@@ -214,15 +142,15 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
    /// @return bool
    function setChapterPresident(uint24[3] _chapterId, address _president) returns (bool _success) {
       // If National
-      if (_chapterId[2] == 0) {
+      if (_chapterId[1] == 0) {
          chapterGlobal
-           .chaptersNational[ _chapterId[1] ]
+           .chaptersNational[ _chapterId[0] ]
            .president = _president;
       // If Local
       } else {
          chapterGlobal
-           .chaptersNational[ _chapterId[1] ]
-           .chaptersLocal[ _chapterId[2] ]
+           .chaptersNational[ _chapterId[0] ]
+           .chaptersLocal[ _chapterId[1] ]
            .president = _president;
       }
       _success = true;
@@ -233,18 +161,18 @@ contract ChapterDatabase /*is GDAOEnabled*/ {
    /// @param _secretary The new secretary
    /// @return bool
    function setChapterSecretary(uint24[3] _chapterId, address _secretary) returns (bool _success) {
-     if(!isExistingChapterLocal(chapterId)) throw;
+     if(!isChapterLocalExists(chapterId)) throw;
        // If National
-       if (_chapterId[2] == 0) {
+       if (_chapterId[1] == 0) {
           chapterGlobal
-            .chaptersNational[ _chapterId[1] ]
+            .chaptersNational[ _chapterId[0] ]
             .secretariat
             .secretary = _secretary;
        // If Local
        } else {
           chapterGlobal
-            .chaptersNational[ _chapterId[1] ]
-            .chaptersLocal[ _chapterId[2] ]
+            .chaptersNational[ _chapterId[0] ]
+            .chaptersLocal[ _chapterId[1] ]
             .secretariat
             .secretary = _secretary;
        }
