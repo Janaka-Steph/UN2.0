@@ -1,8 +1,8 @@
 pragma solidity ^0.4.11;
 
-/// @title Chapter Database
+/// @title Chapter Storage
 /// @author 97Network
-contract ChapterDatabase {
+contract ChapterStorage {
 
    // National chapter [000], Local chapter [00000], Sub-chapter [00]
    uint24[3] chapterId;

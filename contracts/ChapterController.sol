@@ -1,5 +1,7 @@
 pragma solidity ^0.4.11;
 
+import './Registry.sol';
+
 /// @title Chapter Controller
 /// @author 97Network
 contract ChapterController {
