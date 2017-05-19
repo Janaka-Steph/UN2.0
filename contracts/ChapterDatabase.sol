@@ -1,4 +1,4 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.11;
 
 /// @title Chapter Database
 /// @author 97Network
@@ -209,6 +209,5 @@ contract ChapterDatabase {
   {
     return  chapterIndex[index];
   }
-
 */
 }

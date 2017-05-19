@@ -1,8 +1,4 @@
-pragma solidity ^0.4.8;
-
-// import './Legislator.sol';
-// import './ChapterDatabase.sol';
-
+pragma solidity ^0.4.11;
 
 /// @title Chapter Controller
 /// @author 97Network
