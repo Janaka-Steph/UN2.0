@@ -39,7 +39,7 @@ contract ChapterStorage {
   }
 
   struct ChapterLocal {
-    uint24 localChapterId;
+    uint24 chapterLocalId;
     mapping(uint24 => SubChapter) localSubChapters;
     Forum forum;
     mapping(bytes32 => address) moderators;
@@ -102,18 +102,18 @@ contract ChapterStorage {
   /// @param _secretary The secretary
   /// @return bool
   function createChapterLocal(uint24 _chapterNationalId, address _president, address _secretary) returns (bool _success) {
-      // Get chaptersLocalIndex
-      uint24 chaptersLocalIndex = chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocalIndex;
-      // New index
-      uint24 index = chaptersLocalIndex + 1;
-      // Increment chaptersLocalIndex
-      chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocalIndex = index;
-      // Create local chapter
-      chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ index ].localChapterId = index;
-      chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ index ].president = _president;
-      chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ index ].secretariat.secretary = _secretary;
-      _success = true;
-      return _success;
+    // Get chaptersLocalIndex
+    uint24 chaptersLocalIndex = chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocalIndex;
+    // New index
+    uint24 index = chaptersLocalIndex + 1;
+    // Increment chaptersLocalIndex
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocalIndex = index;
+    // Create local chapter
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ index ].chapterLocalId = index;
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ index ].president = _president;
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ index ].secretariat.secretary = _secretary;
+    _success = true;
+    return _success;
   }
 
   /// @notice Check if chapter exist
@@ -124,7 +124,7 @@ contract ChapterStorage {
     if (chapterGlobal
           .chaptersNational[ _chapterNationalId ]
           .chaptersLocal[ _chapterLocalId ]
-          .localChapterId != 0
+          .chapterLocalId != 0
        ) { return true; }
     else { return false; }
   }
