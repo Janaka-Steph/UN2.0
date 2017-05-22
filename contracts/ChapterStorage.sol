@@ -7,6 +7,9 @@ contract ChapterStorage {
   // National chapter [000], Local chapter [00000], Sub-chapter [00]
   uint24[3] chapterId;
 
+  uint24 chaptersLocalIndex;
+  uint24 chaptersNationalIndex;
+
   struct Forum {
     address[] members;
   }
@@ -27,7 +30,6 @@ contract ChapterStorage {
 
   struct ChapterNational {
     mapping(uint24 => ChapterLocal) chaptersLocal;
-    uint24 chaptersLocalIndex;
     Forum forum;
     mapping(bytes32 => address) moderators;
     uint24 nationalChapterId;
@@ -92,7 +94,6 @@ contract ChapterStorage {
   function createChapterNational(uint24 _chapterNationalId, address _president, address _secretary) returns (bool _success) {
     chapterGlobal.chaptersNational[ _chapterNationalId ].president = _president;
     chapterGlobal.chaptersNational[ _chapterNationalId ].secretariat.secretary = _secretary;
-    chapterGlobal.chaptersNational[ _chapterNationalId ].moderators['name2'] = 0x3;
     _success = true;
     return _success;
   }
@@ -104,17 +105,13 @@ contract ChapterStorage {
   /// @param _secretary The secretary
   /// @return bool
   function createChapterLocal(uint24 _chapterNationalId, address _president, address _secretary) returns (bool _success) {
-    // Get chaptersLocalIndex
-    uint24 chaptersLocalIndex = chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocalIndex;
-    // New index
-    uint24 index = chaptersLocalIndex + 1;
-    LogIndex(index);
-    // Increment chaptersLocalIndex
-    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocalIndex = index;
+    // Increment index
+    chaptersLocalIndex = chaptersLocalIndex + 1;
+    LogIndex(chaptersLocalIndex);
     // Create local chapter
-    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ index ].chapterLocalId = index;
-    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ index ].president = _president;
-    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ index ].secretariat.secretary = _secretary;
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ chaptersLocalIndex ].chapterLocalId = chaptersLocalIndex;
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ chaptersLocalIndex ].president = _president;
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ chaptersLocalIndex ].secretariat.secretary = _secretary;
     _success = true;
     return _success;
   }
