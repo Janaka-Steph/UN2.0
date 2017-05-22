@@ -4,16 +4,14 @@ pragma solidity ^0.4.11;
 /// @author 97Network
 contract ChapterStorage {
 
-   // National chapter [000], Local chapter [00000], Sub-chapter [00]
-   uint24[3] chapterId;
+  // National chapter [000], Local chapter [00000], Sub-chapter [00]
+  uint24[3] chapterId;
 
-   enum Level {Local, National, Global}
+  struct Forum {
+    address[] members;
+  }
 
-   struct Forum {
-       address[] members;
-   }
-
-   struct Secretariat {
+  struct Secretariat {
        address secretary;
        address[] members;
    }
@@ -67,6 +65,10 @@ contract ChapterStorage {
     address chapterSecretary
   );
 
+  event LogIndex (
+    uint24 index
+  );
+
 
   /// @notice Create global chapter
   /// @dev Called once. There is only one global chapter
@@ -106,6 +108,7 @@ contract ChapterStorage {
     uint24 chaptersLocalIndex = chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocalIndex;
     // New index
     uint24 index = chaptersLocalIndex + 1;
+    LogIndex(index);
     // Increment chaptersLocalIndex
     chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocalIndex = index;
     // Create local chapter
