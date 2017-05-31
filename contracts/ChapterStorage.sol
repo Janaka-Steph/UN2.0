@@ -4,10 +4,11 @@ pragma solidity ^0.4.11;
 /// @author 97Network
 contract ChapterStorage {
 
-  // National chapter [000], Local chapter [00000], Sub-chapter [00]
-  uint24[3] chapterId;
+  // chapterId: National chapter [000], Local chapter [00000], Sub-chapter [00]
 
+  // Number of local chapters
   uint24 chaptersLocalIndex;
+  // Number of national chapters
   uint24 chaptersNationalIndex;
 
   struct Forum {
@@ -202,48 +203,64 @@ contract ChapterStorage {
   *
   */
 
-   /// @notice Set chapter forum
-   /// @param _chapterId The chapter ID
+   /// @notice Set chapter national forum
+   /// @param _chapterNationalId The national chapter ID
    /// @param _members The forum members
    /// @return bool
-   function setForum(uint24[3] _chapterId, address[] _members) public returns(bool _success) {
-      // If National
-      if (_chapterId[1] == 0) { // if not local
-         chapterGlobal
-           .chaptersNational[ _chapterId[0] ]
-           .forum
-           .members = _members;
-      // If Local
-      } else {
-         if(!isChapterLocalExists(_chapterId[0], _chapterId[1])) throw;
-         chapterGlobal
-           .chaptersNational[ _chapterId[0] ]
-           .chaptersLocal[ _chapterId[1] ]
-           .forum
-           .members = _members;
-      }
-      _success = true;
+   function setForumChapterNational(uint24 _chapterNationalId, address[] _members) public returns(bool _success) {
+     if(!isChapterNationalExists(_chapterNationalId)) throw;
+     chapterGlobal
+       .chaptersNational[ _chapterNationalId ]
+       .forum
+       .members = _members;
+     _success = true;
+     return _success;
    }
 
-   /// @notice Set chapter Secretariat
-   /// @param _chapterId The chapter ID
+   /// @notice Set chapter local forum
+   /// @param _chapterNationalId The national chapter ID
+   /// @param _chapterLocalId The local chapter ID
+   /// @param _members The forum members
+   /// @return bool
+   function setForumChapterLocal(uint24 _chapterNationalId, uint24 _chapterLocalId, address[] _members) public returns(bool _success) {
+     if(!isChapterLocalExists(_chapterNationalId, _chapterLocalId)) throw;
+     chapterGlobal
+       .chaptersNational[ _chapterNationalId ]
+          .chaptersLocal[ _chapterLocalId ]
+          .forum
+          .members = _members;
+     _success = true;
+     return _success;
+  }
+
+
+   /// @notice Set chapter national Secretariat
+   /// @param _chapterNationalId The national chapter ID
    /// @param _secretary The secretary
    /// @param _members The members
    /// @return bool
-   function setSecretariat(uint24[3] _chapterId, address _secretary, address[] _members) returns (bool _success) {
-       // If National
-       if (_chapterId[1] == 0) { // if not local
-          chapterGlobal.chaptersNational[ _chapterId[0] ].secretariat.secretary = _secretary;
-          chapterGlobal.chaptersNational[ _chapterId[0] ].secretariat.members = _members;
-       // If Local
-       } else {
-          if(!isChapterLocalExists(_chapterId[0], _chapterId[1])) throw;
-          chapterGlobal
-            .chaptersNational[ _chapterId[0] ]
-            .chaptersLocal[ _chapterId[1] ]
-            .secretariat = Secretariat(_secretary, _members);
-       }
-       _success = true;
+   function setSecretariatChapterNational(uint24 _chapterNationalId, address _secretary, address[] _members) returns (bool _success) {
+     if(!isChapterNationalExists(_chapterNationalId)) throw;
+     chapterGlobal.chaptersNational[ _chapterNationalId ].secretariat.secretary = _secretary;
+     chapterGlobal.chaptersNational[ _chapterNationalId ].secretariat.members = _members;
+     _success = true;
+     return _success;
+   }
+
+   /// @notice Set chapter local Secretariat
+   /// @param _chapterNationalId The national chapter ID
+   /// @param _chapterLocalId The local chapter ID
+   /// @param _secretary The secretary
+   /// @param _members The members
+   /// @return bool
+   function setSecretariatChapterLocal(uint24 _chapterNationalId, uint24 _chapterLocalId, address _secretary, address[] _members) returns (bool _success) {
+     if(!isChapterLocalExists(_chapterNationalId,_chapterLocalId)) throw;
+     chapterGlobal
+       .chaptersNational[ _chapterNationalId ]
+       .chaptersLocal[ _chapterLocalId ]
+       .secretariat = Secretariat(_secretary, _members);
+     _success = true;
+     return _success;
    }
 
    /// @notice Set national chapter president
