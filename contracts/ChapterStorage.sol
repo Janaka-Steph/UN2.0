@@ -2,7 +2,7 @@ pragma solidity ^0.4.11;
 
 /// @title Chapter Storage
 /// @author 97Network
-contract ChapterStorage {
+contract ChapterStorage is GDAO {
 
   // chapterId: National chapter [000], Local chapter [00000], Sub-chapter [00]
 
@@ -78,7 +78,7 @@ contract ChapterStorage {
   /// @param _president The president
   /// @param _secretary The secretary
   /// @return bool
-  function createChapterGlobal(address _president, address _secretary) returns (bool _success) {
+  function createChapterGlobal(address _president, address _secretary) isCallerValid returns (bool _success) {
     chapterGlobal.president = _president;
     chapterGlobal.secretariat.secretary = _secretary;
     chapterGlobal.moderators['name2'] = 0x3;

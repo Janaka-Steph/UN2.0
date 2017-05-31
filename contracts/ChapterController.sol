@@ -1,16 +1,20 @@
 pragma solidity ^0.4.11;
 
-import './Registry.sol';
+import './gdao/GDAO.sol';
+import './gdao/NormCorpusInterface.sol';
 import './ChapterStorage.sol';
 
 /// @title Chapter Controller
 /// @author 97Network
-contract ChapterController is Registry {
-  Registry registry;
+contract ChapterController {
+  GDAO gdao;
+  NormCorpusInterface normCorpus;
+  ChapterStorage chapterStorage;
 
-  function ChapterController(address _registryAddress) {
-    registryAddress = _registryAddress;
-    registry = Registry(registryAddress);
+  function ChapterController(GDAO _gdao, ChapterStorage _chapterStorage) {
+    chapterStorage = _chapterStorage;
+    normCorpus = _gdao.getInstance();
+    normCorpus.insert(_chapterStorage);
   }
   /// @notice Create Global chapter
   /// @dev Called once. There is only one global chapter
@@ -19,7 +23,7 @@ contract ChapterController is Registry {
   /// @return bool
   function createChapterGlobal(address _president, address _secretary) returns (bool _success) {
      // if is BoardOfDirectors
-     _success = ChapterStorage(registry.getContract('s:chapter')).createChapterGlobal(_president, _secretary);
+     _success = chapterStorage.createChapterGlobal(_president, _secretary);
      return _success;
   }
 
@@ -28,9 +32,9 @@ contract ChapterController is Registry {
   /// @param _secretary The secretary
   /// @return ChapterNational
   function createChapterNational(address _president, address _secretary) returns (bool _success) {
-     Registry registry = Registry(registryAddress);
+     //Registry registry = Registry(registryAddress);
      // if is BoardOfDirectors
-     _success = ChapterStorage(registry.getContract('s:chapter')).createChapterNational(_president, _secretary);
+     //_success = ChapterStorage(registry.getContract('s:chapter')).createChapterNational(_president, _secretary);
      return _success;
   }
 
@@ -41,7 +45,7 @@ contract ChapterController is Registry {
   /// @return ChapterLocal
   function createChapterLocal(uint24 _chapterNationalId, address _president, address _secretary) returns (bool _success) {
      // if is BoardOfDirectors
-     _success = ChapterStorage(registry.getContract('s:chapter')).createChapterLocal(_chapterNationalId, _president, _secretary);
+     //_success = ChapterStorage(registry.getContract('s:chapter')).createChapterLocal(_chapterNationalId, _president, _secretary);
      return _success;
   }
 }
