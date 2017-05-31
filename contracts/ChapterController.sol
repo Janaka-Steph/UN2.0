@@ -16,6 +16,7 @@ contract ChapterController {
     normCorpus = _gdao.getInstance();
     normCorpus.insert(_chapterStorage);
   }
+
   /// @notice Create Global chapter
   /// @dev Called once. There is only one global chapter
   /// @param _president The president

@@ -8,6 +8,8 @@ contract NormCorpus is NormCorpusInterface, Owned {
 
     mapping(address => bool) public isNorm;
     uint public numberOfNorms;
+    event InsertContract(address);
+    event CallerNotValid(address);
 
 
     function NormCorpus(){
@@ -24,10 +26,10 @@ contract NormCorpus is NormCorpusInterface, Owned {
         }
         else CallerNotValid(msg.sender);
     }
-    event CallerNotValid(address);
 
     function insert(address _contract) isCallerValidOrOwner {
         isNorm[_contract] = true;
+        InsertContract(_contract);
         numberOfNorms = numberOfNorms + 1;
     }
 
