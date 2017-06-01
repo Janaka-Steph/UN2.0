@@ -6,8 +6,6 @@ contract ChapterStorage {
 
   // chapterId: National chapter [000], Local chapter [00000], Sub-chapter [00]
 
-  // Number of local chapters
-  uint24 chaptersLocalIndex;
   // Number of national chapters
   uint24 chaptersNationalIndex;
 
@@ -31,6 +29,7 @@ contract ChapterStorage {
 
   struct ChapterNational {
     mapping(uint24 => ChapterLocal) chaptersLocal;
+    uint24 chaptersLocalIndex;
     Forum forum;
     mapping(bytes32 => address) moderators;
     uint24 chapterNationalId;
@@ -120,7 +119,9 @@ contract ChapterStorage {
   /// @return bool
   function createChapterLocal(uint24 _chapterNationalId, address _president, address _secretary) returns (bool _success) {
     // Increment index
+    uint24 chaptersLocalIndex = chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocalIndex;
     chaptersLocalIndex = chaptersLocalIndex + 1;
+    chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocalIndex = chaptersLocalIndex;
     LogIndex(chaptersLocalIndex);
     // Create local chapter
     chapterGlobal.chaptersNational[ _chapterNationalId ].chaptersLocal[ chaptersLocalIndex ].chapterLocalId = chaptersLocalIndex;
